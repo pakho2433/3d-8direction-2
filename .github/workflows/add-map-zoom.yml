@@ -1,0 +1,131 @@
+name: Add map zoom controls
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/add-map-zoom.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add pinch, wheel and button zoom while planning
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("index.html")
+          s = path.read_text(encoding="utf-8")
+
+          if 'id="zoomPanel"' in s and 'function setupMapZoom()' in s:
+              print("Map zoom is already installed")
+              raise SystemExit(0)
+
+          old = '#weather{position:fixed;right:18px;top:178px;z-index:5;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.82);font-weight:900;box-shadow:0 5px 0 rgba(80,137,160,.25)}'
+          new = old + '''
+          #zoomPanel{position:fixed;right:16px;top:245px;z-index:7;display:flex;flex-direction:column;align-items:center;gap:7px;padding:9px;border-radius:20px;transition:.25s}
+          #zoomPanel.hidden{opacity:0;pointer-events:none;transform:translateX(20px)}
+          .zoomMapBtn{width:48px;height:48px;border:0;border-radius:15px;background:#fff;box-shadow:0 5px 0 #78b4cc;font-size:27px;font-weight:950;line-height:1;transition:transform .08s,box-shadow .08s}
+          .zoomMapBtn:active{transform:translateY(4px);box-shadow:0 1px 0 #78b4cc}
+          #zoomPercent{min-width:52px;text-align:center;font-size:13px;font-weight:950;color:#315c74}
+          #pinchTip{position:fixed;left:50%;top:198px;transform:translateX(-50%);z-index:6;background:rgba(255,255,255,.84);padding:7px 12px;border-radius:999px;font-size:13px;font-weight:900;box-shadow:0 4px 0 rgba(76,143,170,.25);pointer-events:none;transition:.25s}
+          #pinchTip.hidden{opacity:0;transform:translateX(-50%) translateY(-10px)}'''
+          if old not in s:
+              raise SystemExit("Could not find weather CSS anchor")
+          s = s.replace(old, new, 1)
+
+          old = '  #weather{top:145px;font-size:13px;right:11px}#viewBadge{top:150px}'
+          new = old + '''
+            #zoomPanel{right:9px;top:205px;padding:7px}.zoomMapBtn{width:43px;height:43px;font-size:24px}#pinchTip{top:160px;font-size:12px}'''
+          if old not in s:
+              raise SystemExit("Could not find mobile CSS anchor")
+          s = s.replace(old, new, 1)
+
+          old = '<div id="weather">🌤️ 晴朗城市</div>\n<div id="viewBadge">👀 第一身視角</div>'
+          new = '''<div id="weather">🌤️ 晴朗城市</div>
+          <div id="pinchTip" class="hidden">🤏 雙指可任意放大縮小地圖</div>
+          <div id="zoomPanel" class="glass hidden" aria-label="地圖縮放控制">
+            <button class="zoomMapBtn" id="mapZoomIn" aria-label="放大地圖">＋</button>
+            <div id="zoomPercent">100%</div>
+            <button class="zoomMapBtn" id="mapZoomOut" aria-label="縮小地圖">−</button>
+            <button class="zoomMapBtn" id="mapZoomReset" aria-label="重設地圖縮放">↺</button>
+          </div>
+          <div id="viewBadge">👀 第一身視角</div>'''
+          if old not in s:
+              raise SystemExit("Could not find weather HTML anchor")
+          s = s.replace(old, new, 1)
+
+          old = 'let tileSize=2.25,level,orientation=0,boardRotation=0;'
+          new = old + '\nlet planningZoom=1,pinchStartDistance=0,pinchStartZoom=1;'
+          if old not in s:
+              raise SystemExit("Could not find state anchor")
+          s = s.replace(old, new, 1)
+
+          old = ' renderer.setAnimationLoop(render);\n}'
+          new = ' renderer.setAnimationLoop(render);\n setupMapZoom();\n}'
+          if old not in s:
+              raise SystemExit("Could not find renderer anchor")
+          s = s.replace(old, new, 1)
+
+          old = ' level=levels[levelIndex];selected=[];travelling=false;orientation=levelIndex%4;boardRotation=orientation*Math.PI/2;'
+          new = ' level=levels[levelIndex];selected=[];travelling=false;planningZoom=1;orientation=levelIndex%4;boardRotation=orientation*Math.PI/2;'
+          if old not in s:
+              raise SystemExit("Could not find level anchor")
+          s = s.replace(old, new, 1)
+
+          old = " $('planner').classList.remove('hidden');$('travelHud').classList.remove('show');$('viewBadge').classList.remove('show');"
+          new = " $('planner').classList.remove('hidden');$('travelHud').classList.remove('show');$('viewBadge').classList.remove('show');$('zoomPanel').classList.remove('hidden');$('pinchTip').classList.remove('hidden');updateZoomLabel();"
+          if old not in s:
+              raise SystemExit("Could not find planner show anchor")
+          s = s.replace(old, new, 1)
+
+          old = 'function setPlanningCamera(){if(!level)return;const span=level.size*tileSize;camera.position.set(span*.72,span*.93,span*.86);camera.lookAt(0,0,0);camera.fov=innerWidth<650?52:45;camera.updateProjectionMatrix();if(player)player.visible=true}'
+          new = '''function clampZoom(v){return Math.max(.48,Math.min(2.35,v))}
+          function updateZoomLabel(){if($("zoomPercent"))$("zoomPercent").textContent=`${Math.round(100/planningZoom)}%`}
+          function setPlanningCamera(){if(!level||travelling)return;const span=level.size*tileSize;camera.position.set(span*.72*planningZoom,span*.93*planningZoom,span*.86*planningZoom);camera.lookAt(0,0,0);camera.fov=innerWidth<650?52:45;camera.updateProjectionMatrix();if(player)player.visible=true;updateZoomLabel()}
+          function setMapZoom(value){if(!level||travelling)return;planningZoom=clampZoom(value);setPlanningCamera()}
+          function setupMapZoom(){
+           const canvas=renderer.domElement;
+           $("mapZoomIn").onclick=()=>setMapZoom(planningZoom*.82);
+           $("mapZoomOut").onclick=()=>setMapZoom(planningZoom*1.22);
+           $("mapZoomReset").onclick=()=>setMapZoom(1);
+           canvas.addEventListener("wheel",e=>{if(!level||travelling)return;e.preventDefault();setMapZoom(planningZoom*Math.exp(e.deltaY*.0015))},{passive:false});
+           canvas.addEventListener("touchstart",e=>{if(!level||travelling||e.touches.length!==2)return;const a=e.touches[0],b=e.touches[1];pinchStartDistance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);pinchStartZoom=planningZoom},{passive:true});
+           canvas.addEventListener("touchmove",e=>{if(!level||travelling||e.touches.length!==2||!pinchStartDistance)return;e.preventDefault();const a=e.touches[0],b=e.touches[1],distance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);setMapZoom(pinchStartZoom*(pinchStartDistance/Math.max(20,distance)))},{passive:false});
+           canvas.addEventListener("touchend",()=>{pinchStartDistance=0},{passive:true});
+           canvas.addEventListener("touchcancel",()=>{pinchStartDistance=0},{passive:true});
+          }'''
+          if old not in s:
+              raise SystemExit("Could not find planning camera anchor")
+          s = s.replace(old, new, 1)
+
+          old = "async function startTravel(){travelling=true;$('planner').classList.add('hidden');$('travelHud').classList.add('show');$('viewBadge').classList.add('show');player.visible=false;"
+          new = "async function startTravel(){travelling=true;$('planner').classList.add('hidden');$('zoomPanel').classList.add('hidden');$('pinchTip').classList.add('hidden');$('travelHud').classList.add('show');$('viewBadge').classList.add('show');player.visible=false;"
+          if old not in s:
+              raise SystemExit("Could not find travel anchor")
+          s = s.replace(old, new, 1)
+
+          path.write_text(s, encoding="utf-8")
+          print("Map zoom installed")
+          PY
+
+      - name: Commit updated game
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes required"
+          else
+            git commit -m "Allow free map zoom while selecting answers [skip ci]"
+            git push
+          fi
