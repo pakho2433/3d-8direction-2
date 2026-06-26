@@ -1,0 +1,2 @@
+PixelIdleRPG JavaScript and static file checks passed.
+Validated commit: a69932a7a86d194fd3d35d56d5aa64254e24511e
