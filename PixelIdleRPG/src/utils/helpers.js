@@ -1,0 +1,14 @@
+export const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+export const lerp=(a,b,t)=>a+(b-a)*t;
+export const randomFloat=(min,max)=>Math.random()*(max-min)+min;
+export const randomInt=(min,max)=>Math.floor(randomFloat(min,max+1));
+export const choice=list=>list[Math.floor(Math.random()*list.length)];
+export const uid=(prefix='id')=>`${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+export const formatNumber=value=>Number.isFinite(value)?Math.floor(value).toLocaleString('en-US'):'0';
+export const formatDuration=seconds=>{const s=Math.max(0,Math.floor(seconds)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;return[h,m,sec].map(v=>String(v).padStart(2,'0')).join(':');};
+export const safeJsonParse=(text,fallback=null)=>{try{return JSON.parse(text);}catch{return fallback;}};
+export const deepClone=value=>typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value));
+export const sanitizeInteger=(value,fallback=0,min=0,max=Number.MAX_SAFE_INTEGER)=>{const n=Number(value);return Number.isFinite(n)?clamp(Math.floor(n),min,max):fallback;};
+export const debounce=(fn,delay=120)=>{let timer=0;return(...args)=>{clearTimeout(timer);timer=setTimeout(()=>fn(...args),delay);};};
+export const calculateDamage=({attack,defense,multiplier=1,critical=false,criticalDamage=1.5})=>{const base=Math.max(1,Math.floor(attack*multiplier-defense*.45));return critical?Math.max(1,Math.floor(base*criticalDamage)):base;};
+export const createElement=(tag,className='',html='')=>{const el=document.createElement(tag);if(className)el.className=className;if(html)el.innerHTML=html;return el;};
