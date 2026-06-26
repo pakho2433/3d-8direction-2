@@ -1,0 +1,1 @@
+export default {id:'mage',name:'Mage',role:'遠程魔法輸出',unlocked:true,unlockChapter:1,base:{hp:410,mp:135,attack:68,defense:18,critRate:.1,critDamage:1.65,attackSpeed:.82,moveSpeed:85,attackRange:350},palette:{hair:0xf09ac6,skin:0xedbfa2,armor:0x6e45a4,accent:0xc67dff,weapon:0xa86fff}};
