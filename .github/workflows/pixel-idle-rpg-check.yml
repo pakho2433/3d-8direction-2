@@ -6,8 +6,11 @@ on:
       - 'PixelIdleRPG/**'
       - '.github/workflows/pixel-idle-rpg-check.yml'
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   validate:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +22,6 @@ jobs:
       - name: Start static server
         run: |
           python3 -m http.server 8080 >/tmp/pixel-rpg-server.log 2>&1 &
-          echo $! > /tmp/pixel-rpg-server.pid
           sleep 2
       - name: Check public files
         run: |
@@ -27,3 +29,11 @@ jobs:
           curl --fail http://127.0.0.1:8080/PixelIdleRPG/src/main.js >/dev/null
           curl --fail http://127.0.0.1:8080/PixelIdleRPG/src/PixelBattleScene.js >/dev/null
           curl --fail http://127.0.0.1:8080/PixelIdleRPG/manifest.webmanifest >/dev/null
+      - name: Record validation
+        run: |
+          printf 'PixelIdleRPG JavaScript and static file checks passed.\nValidated commit: %s\n' "$GITHUB_SHA" > PixelIdleRPG/VALIDATED.txt
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add PixelIdleRPG/VALIDATED.txt
+          git commit -m 'Record PixelIdleRPG validation' || exit 0
+          git push
