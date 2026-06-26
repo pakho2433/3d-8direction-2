@@ -1,0 +1,1 @@
+export default {id:'gunner',name:'Gunner',role:'Fast ranged attacker',unlocked:false,unlockChapter:3,base:{hp:470,mp:110,attack:58,defense:23,critRate:.13,critDamage:1.7,attackSpeed:1.35,moveSpeed:105,attackRange:390},palette:{hair:0xe1d2bc,skin:0xe4b58f,armor:0x46526a,accent:0x5fa3ff,weapon:0x69b9ff}};
