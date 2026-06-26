@@ -2,8 +2,6 @@
 'use strict';
 
 let thirdPersonActive = false;
-let sceneRef = null;
-let cameraRef = null;
 let playerRef = null;
 let snapCameraOnNextFrame = false;
 
@@ -33,16 +31,16 @@ function travellingNow() {
   );
 }
 
-function setCameraFov(value) {
-  if (!cameraRef || cameraRef.fov === value) return;
-  cameraRef.fov = value;
-  cameraRef.updateProjectionMatrix();
+function setCameraFov(camera, value) {
+  if (!camera || camera.fov === value) return;
+  camera.fov = value;
+  camera.updateProjectionMatrix();
 }
 
-function updateThirdPersonCamera() {
-  if (!thirdPersonActive || !travellingNow() || !sceneRef || !cameraRef) return;
+function applyThirdPersonCamera(scene, camera) {
+  if (!thirdPersonActive || !travellingNow() || !scene || !camera) return;
 
-  if (!playerRef || !playerRef.parent) playerRef = findPlayer(sceneRef);
+  if (!playerRef || !playerRef.parent) playerRef = findPlayer(scene);
   if (!playerRef) return;
 
   playerRef.visible = true;
@@ -53,39 +51,51 @@ function updateThirdPersonCamera() {
   const playerWorld = new THREE.Vector3();
   playerRef.getWorldPosition(playerWorld);
 
-  // 真正第三身追蹤：鏡頭保持在角色後上方，略為偏側，方便看到前路。
+  // 第三身追蹤鏡頭：角色後上方，略為偏右，畫面可同時看到角色和前路。
   const desiredPosition = playerWorld.clone()
-    .addScaledVector(forward, -3.8)
-    .addScaledVector(side, 0.35);
-  desiredPosition.y += 2.55;
+    .addScaledVector(forward, -3.9)
+    .addScaledVector(side, 0.42);
+  desiredPosition.y += 2.65;
 
   if (snapCameraOnNextFrame) {
-    cameraRef.position.copy(desiredPosition);
+    camera.position.copy(desiredPosition);
     snapCameraOnNextFrame = false;
   } else {
-    cameraRef.position.lerp(desiredPosition, 0.28);
+    camera.position.lerp(desiredPosition, 0.34);
   }
 
-  const lookTarget = playerWorld.clone().addScaledVector(forward, 1.35);
+  const lookTarget = playerWorld.clone().addScaledVector(forward, 1.45);
   lookTarget.y += 1.05;
-  cameraRef.lookAt(lookTarget);
-  setCameraFov(58);
+  camera.lookAt(lookTarget);
+  setCameraFov(camera, 58);
 
   const badge = document.getElementById('viewBadge');
   if (badge) badge.textContent = '🕹️ 第三身視角';
 }
 
-function patchRenderer() {
-  if (!window.THREE?.WebGLRenderer || THREE.WebGLRenderer.prototype.__thirdViewPatched) return;
+// WebGLRenderer.render 是建立在 renderer 實例上，而不是 prototype。
+// 所以要在 game.js 建立 renderer 前包裝建構器，才能可靠地攔截每一格畫面。
+function installRendererWrapper() {
+  if (!window.THREE?.WebGLRenderer || THREE.WebGLRenderer.__thirdViewWrapped) return;
 
-  const originalRender = THREE.WebGLRenderer.prototype.render;
-  THREE.WebGLRenderer.prototype.render = function patchedRender(scene, camera) {
-    sceneRef = scene;
-    cameraRef = camera;
-    updateThirdPersonCamera();
-    return originalRender.call(this, scene, camera);
-  };
-  THREE.WebGLRenderer.prototype.__thirdViewPatched = true;
+  const OriginalRenderer = THREE.WebGLRenderer;
+
+  function WrappedRenderer(...args) {
+    const renderer = new OriginalRenderer(...args);
+    const originalRender = renderer.render.bind(renderer);
+
+    renderer.render = function renderWithThirdPerson(scene, camera) {
+      applyThirdPersonCamera(scene, camera);
+      return originalRender(scene, camera);
+    };
+
+    return renderer;
+  }
+
+  WrappedRenderer.prototype = OriginalRenderer.prototype;
+  Object.setPrototypeOf(WrappedRenderer, OriginalRenderer);
+  WrappedRenderer.__thirdViewWrapped = true;
+  THREE.WebGLRenderer = WrappedRenderer;
 }
 
 function activateButton(button) {
@@ -97,7 +107,7 @@ function activateButton(button) {
 function deactivateThirdPerson() {
   thirdPersonActive = false;
   snapCameraOnNextFrame = false;
-  if (travellingNow()) setCameraFov(68);
+  playerRef = null;
 }
 
 function bindControls() {
@@ -109,6 +119,7 @@ function bindControls() {
     playerRef = null;
     snapCameraOnNextFrame = true;
     activateButton(thirdButton);
+
     const badge = document.getElementById('viewBadge');
     if (badge) badge.textContent = '🕹️ 第三身視角';
   });
@@ -123,16 +134,13 @@ function bindControls() {
   const controls = document.getElementById('travelViewControls');
   if (controls) {
     const observer = new MutationObserver(() => {
-      if (!travellingNow()) {
-        deactivateThirdPerson();
-        playerRef = null;
-      }
+      if (!travellingNow()) deactivateThirdPerson();
     });
     observer.observe(controls, {attributes:true, attributeFilter:['class']});
   }
 }
 
-patchRenderer();
+installRendererWrapper();
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', bindControls, {once:true});
 } else {
