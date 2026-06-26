@@ -1,0 +1,1 @@
+export default {id:'fighter',name:'Fighter',role:'前排戰士',unlocked:true,unlockChapter:1,base:{hp:620,mp:100,attack:48,defense:34,critRate:.08,critDamage:1.55,attackSpeed:1.05,moveSpeed:95,attackRange:78},palette:{hair:0x6b3f22,skin:0xe2ae82,armor:0x9aa1ad,accent:0xc63e36,weapon:0xe8edf5}};
