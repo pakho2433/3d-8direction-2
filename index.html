@@ -5,71 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#bfeeff">
 <title>3D 八方向任務 2｜自由路線</title>
-<style>
-:root{
-  --ink:#123b58;--muted:#55758a;--glass:rgba(255,255,255,.91);--blue:#72c9e8;
-  --orange:#ff9f43;--green:#40c878;--red:#ef5965;--shadow:#72abc1;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#bfeeff;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);touch-action:none}
-button{font:inherit;color:inherit}
-#app,#scene{position:fixed;inset:0}
-#scene canvas{display:block;width:100%;height:100%}
-.glass{background:var(--glass);border:1px solid rgba(255,255,255,.75);box-shadow:0 10px 0 rgba(76,143,170,.34),0 18px 40px rgba(42,103,130,.18);backdrop-filter:blur(12px)}
-#hud{position:fixed;top:max(14px,env(safe-area-inset-top));left:14px;width:min(610px,calc(100vw - 190px));padding:16px 18px;border-radius:26px;z-index:5;pointer-events:none}
-#stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}.pill{padding:8px 15px;border-radius:999px;background:#e9f8ff;font-weight:900;font-size:clamp(15px,2.3vw,21px)}
-#mission{font-size:clamp(20px,3vw,31px);font-weight:950;line-height:1.25}#mission b{color:#df6237}
-#subMission{margin-top:6px;color:var(--muted);font-size:clamp(14px,2vw,19px);font-weight:750}
-#compassDock{position:fixed;right:14px;top:max(14px,env(safe-area-inset-top));z-index:6;display:flex;flex-direction:column;align-items:center;gap:8px}
-#compass{width:132px;height:132px;border-radius:50%;position:relative;background:repeating-conic-gradient(from -1deg,#86abc0 0 1deg,transparent 1deg 11.25deg),radial-gradient(circle,#fff 0 57%,#d9f3ff 58% 72%,#fff 73%);border:8px solid white;box-shadow:0 10px 0 #69a5bd,0 18px 28px rgba(28,76,100,.22)}
-#needle{position:absolute;left:50%;top:50%;width:14px;height:86px;transform:translate(-50%,-50%);transition:transform .65s cubic-bezier(.2,.8,.2,1)}
-#needle:before,#needle:after{content:"";position:absolute;left:0;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent}
-#needle:before{top:0;border-bottom:43px solid #ef4d43}#needle:after{bottom:0;border-top:43px solid #31566c}
-#hub{position:absolute;left:50%;top:50%;width:23px;height:23px;border-radius:50%;transform:translate(-50%,-50%);background:#123b58;border:4px solid white}
-#nMark{position:absolute;left:50%;top:-18px;transform:translateX(-50%);background:#fff7f2;color:#d93434;font-weight:950;font-size:28px;border-radius:18px;padding:2px 10px;box-shadow:0 4px 10px rgba(0,0,0,.12)}
-#compassLabel{background:white;border-radius:999px;padding:9px 15px;font-weight:900;box-shadow:0 7px 0 #76abc0;font-size:17px}
-#planner{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(880px,calc(100vw - 24px));padding:14px;border-radius:28px;z-index:8;transition:opacity .25s,transform .25s}
-#planner.hidden{opacity:0;pointer-events:none;transform:translate(-50%,30px)}
-#plannerTitle{font-size:18px;font-weight:950;margin:0 0 8px 3px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-#routeSlots{display:flex;align-items:center;gap:7px;overflow-x:auto;padding:3px 2px 11px;scrollbar-width:none}#routeSlots::-webkit-scrollbar{display:none}
-.slot{min-width:88px;height:48px;padding:0 10px;border:0;border-radius:14px;background:#f7fbfd;box-shadow:0 5px 0 #9ac9db;font-weight:950;font-size:16px;white-space:nowrap}
-.slot.fixed{background:#dff4ff;color:#1c5876}.slot.empty{border:2px dashed #95b9c9;color:#7996a5;background:rgba(255,255,255,.75)}.slot.answer{background:#fff0d7;color:#b45b00}.slot.finish{background:#dff7e9;color:#277149;box-shadow:0 5px 0 #63bc85}
-.connector{font-weight:950;color:#6a8797;font-size:20px;flex:0 0 auto}
-#directionButtons{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-top:4px}
-.dirBtn{min-height:48px;border:0;border-radius:14px;background:#edf9ff;box-shadow:0 5px 0 #82bed7;font-weight:950;font-size:clamp(13px,2vw,17px);transition:transform .08s,box-shadow .08s}.dirBtn:active{transform:translateY(4px);box-shadow:0 1px 0 #82bed7}
-#actions{display:flex;gap:8px;margin-top:10px}.actionBtn{height:45px;border:0;border-radius:14px;padding:0 18px;font-weight:950;background:#eef4f7;box-shadow:0 5px 0 #a8c3cf}.actionBtn.primary{margin-left:auto;background:#ffb55e;box-shadow:0 5px 0 #e28731;color:#603100}.actionBtn:disabled{opacity:.42;filter:grayscale(.5)}
-#travelHud{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%) translateY(150px);width:min(620px,calc(100vw - 30px));z-index:9;padding:14px 18px;border-radius:24px;opacity:0;transition:.35s;pointer-events:none}
-#travelHud.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#travelLine{display:flex;justify-content:space-between;font-weight:950;font-size:17px;gap:12px}.progressTrack{height:12px;border-radius:999px;background:#dceef5;margin-top:10px;overflow:hidden}.progressFill{height:100%;width:0;background:linear-gradient(90deg,#50c886,#76d7f1);transition:width .2s}
-#viewBadge{position:fixed;top:185px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:7;background:rgba(16,48,65,.82);color:white;padding:9px 15px;border-radius:999px;font-weight:900;opacity:0;transition:.3s;pointer-events:none}#viewBadge.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#weather{position:fixed;right:18px;top:178px;z-index:5;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.82);font-weight:900;box-shadow:0 5px 0 rgba(80,137,160,.25)}
-#zoomPanel{position:fixed;right:16px;top:245px;z-index:7;display:flex;flex-direction:column;align-items:center;gap:7px;padding:9px;border-radius:20px;transition:.25s}
-#zoomPanel.hidden{opacity:0;pointer-events:none;transform:translateX(20px)}
-.zoomMapBtn{width:48px;height:48px;border:0;border-radius:15px;background:#fff;box-shadow:0 5px 0 #78b4cc;font-size:27px;font-weight:950;line-height:1;transition:transform .08s,box-shadow .08s}
-.zoomMapBtn:active{transform:translateY(4px);box-shadow:0 1px 0 #78b4cc}
-#zoomPercent{min-width:52px;text-align:center;font-size:13px;font-weight:950;color:#315c74}
-#pinchTip{position:fixed;left:50%;top:198px;transform:translateX(-50%);z-index:6;background:rgba(255,255,255,.88);padding:7px 12px;border-radius:999px;font-size:13px;font-weight:900;box-shadow:0 4px 0 rgba(76,143,170,.25);pointer-events:none;transition:.25s}
-#pinchTip.hidden{opacity:0;transform:translateX(-50%) translateY(-10px)}
-#toast{position:fixed;left:50%;top:50%;z-index:20;transform:translate(-50%,-50%) scale(.8);padding:16px 24px;border-radius:20px;background:rgba(16,48,65,.92);color:white;font-size:20px;font-weight:950;opacity:0;pointer-events:none;transition:.22s}#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.modal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(9,40,56,.42);opacity:0;visibility:hidden;transition:.25s;padding:18px}.modal.open{opacity:1;visibility:visible}.card{width:min(600px,94vw);background:white;border-radius:30px;padding:25px;text-align:center;box-shadow:0 14px 0 #77abc0,0 30px 70px rgba(16,51,70,.28)}.card h1,.card h2{margin:0 0 12px}.card p{color:#547386;font-weight:700;line-height:1.55}.bigIcon{font-size:74px;display:block;margin:2px 0 8px;animation:bob 1.1s ease-in-out infinite}.modalButton{border:0;border-radius:16px;padding:13px 24px;background:#ffb55e;box-shadow:0 6px 0 #df842f;font-weight:950;font-size:18px;margin-top:8px}.avatarPick{display:flex;gap:12px;justify-content:center;margin:18px 0}.avatar{border:3px solid transparent;background:#edf8fc;border-radius:22px;padding:14px 25px;font-weight:900;font-size:16px}.avatar span{display:block;font-size:56px}.avatar.selected{border-color:#ff9f43;background:#fff3df}
-#arrivalScene{height:150px;border-radius:20px;background:linear-gradient(#c9efff,#e8fbff 55%,#8dde86 56%);position:relative;overflow:hidden;margin:14px 0}.arrivalRoad{position:absolute;left:10%;right:10%;bottom:0;height:47%;background:#ded8c7;clip-path:polygon(36% 0,64% 0,100% 100%,0 100%)}.arrivalBuilding{position:absolute;left:50%;bottom:32%;transform:translateX(-50%);font-size:72px}.arrivalPeople{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);font-size:44px;white-space:nowrap;animation:bob .8s ease-in-out infinite}
-@keyframes bob{50%{transform:translateX(-50%) translateY(-6px)}}
-@media(max-width:720px){
-  #hud{width:calc(100vw - 154px);padding:12px 13px;border-radius:20px}#stats{gap:6px;margin-bottom:7px}.pill{padding:6px 9px}
-  #compass{width:108px;height:108px}#needle{height:70px}#needle:before{border-bottom-width:35px}#needle:after{border-top-width:35px}#nMark{font-size:22px;top:-15px}#compassLabel{font-size:14px;padding:7px 10px}
-  #weather{top:145px;font-size:13px;right:11px}#viewBadge{top:150px}
-  #zoomPanel{right:9px;top:205px;padding:7px}.zoomMapBtn{width:43px;height:43px;font-size:24px}#pinchTip{top:160px;font-size:12px}
-  #planner{padding:10px;border-radius:22px}.slot{min-width:74px;height:43px;font-size:14px}.dirBtn{min-height:42px;font-size:12px}.actionBtn{height:41px;padding:0 12px}
-}
-@media(max-width:480px){#directionButtons{grid-template-columns:repeat(4,1fr)}#hud{width:calc(100vw - 132px)}#mission{font-size:19px}#subMission{font-size:13px}.pill{font-size:13px}#compassDock{right:8px}#compass{width:92px;height:92px;border-width:6px}#needle{height:60px}.slot{min-width:68px}}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app"><div id="scene"></div></div>
 <section id="hud" class="glass">
   <div id="stats"><span class="pill" id="levelPill">第 1 關</span><span class="pill" id="sizePill">4 × 4</span><span class="pill" id="scorePill">分數 0</span></div>
   <div id="mission">由起點前往 <b id="targetName">學校</b></div>
-  <div id="subMission">路線可以有多個答案，只要最後到達終點就成功。</div>
+  <div id="subMission">任何路線都可以先出發測試；最後到達終點才算成功。</div>
 </section>
 <div id="compassDock"><div id="compass"><div id="needle"></div><div id="hub"></div><div id="nMark">N</div></div><div id="compassLabel">指南針</div></div>
 <div id="weather">🌤️ 晴朗城市</div>
@@ -81,199 +24,21 @@ button{font:inherit;color:inherit}
   <button class="zoomMapBtn" id="mapZoomReset" aria-label="重設地圖縮放">↺</button>
 </div>
 <div id="viewBadge">👀 第一身視角</div>
+<div id="travelViewControls" class="glass hidden" aria-label="行走視角切換">
+  <button class="viewModeBtn active" data-view="first">👀 第一身</button>
+  <button class="viewModeBtn" data-view="side">🎥 側面</button>
+</div>
 <section id="planner" class="glass">
-  <div id="plannerTitle"><span>🧠 自由規劃前往終點</span><small id="fillCount">尚未到達終點</small></div>
+  <div id="plannerTitle"><span>🧠 自由規劃前往終點</span><small id="fillCount">請選擇方向</small></div>
   <div id="routeSlots"></div>
   <div id="directionButtons"></div>
   <div id="actions"><button class="actionBtn" id="undoBtn">退一步</button><button class="actionBtn" id="clearBtn">清除答案</button><button class="actionBtn primary" id="confirmBtn" disabled>沿此路線出發</button></div>
 </section>
 <section id="travelHud" class="glass"><div id="travelLine"><span id="travelText">第一身行走中</span><span id="travelStep">0 / 0</span></div><div class="progressTrack"><div class="progressFill" id="progressFill"></div></div></section>
 <div id="toast"></div>
-<div id="intro" class="modal open"><div class="card"><span class="bigIcon">🧭</span><h1>3D 八方向任務 2</h1><p>開始後，角色前方會有閃亮的「北方」箭嘴提示真正北方。你可以自由選擇不同路線，只要最後走到目的地，任何答案都會成功。</p><div class="avatarPick"><button class="avatar selected" data-avatar="boy"><span>👦</span>男同學</button><button class="avatar" data-avatar="girl"><span>👧</span>女同學</button></div><button id="startBtn" class="modalButton">開始任務</button></div></div>
+<div id="intro" class="modal open"><div class="card"><span class="bigIcon">🧭</span><h1>3D 八方向任務 2</h1><p>角色前方會有閃亮的「北方」箭嘴。任何路線都可以出發測試，行走期間亦可隨時切換第一身或側面視角；最後到達目的地才算成功。</p><div class="avatarPick"><button class="avatar selected" data-avatar="boy"><span>👦</span>男同學</button><button class="avatar" data-avatar="girl"><span>👧</span>女同學</button></div><button id="startBtn" class="modalButton">開始任務</button></div></div>
 <div id="result" class="modal"><div class="card"><span class="bigIcon" id="resultIcon">🏫</span><h2 id="resultTitle">成功到達學校！</h2><div id="arrivalScene"><div class="arrivalRoad"></div><div class="arrivalBuilding" id="arrivalBuilding">🏫</div><div class="arrivalPeople" id="arrivalPeople">👦👧</div></div><p id="resultText">你成功用自己的路線到達終點。</p><button id="nextBtn" class="modalButton">下一關</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script>
-(() => {
-'use strict';
-const D = [
-  {name:'北方',dx:0,dz:-1,angle:0}, {name:'東北方',dx:1,dz:-1,angle:-Math.PI/4},
-  {name:'東方',dx:1,dz:0,angle:-Math.PI/2}, {name:'東南方',dx:1,dz:1,angle:-3*Math.PI/4},
-  {name:'南方',dx:0,dz:1,angle:Math.PI}, {name:'西南方',dx:-1,dz:1,angle:3*Math.PI/4},
-  {name:'西方',dx:-1,dz:0,angle:Math.PI/2}, {name:'西北方',dx:-1,dz:-1,angle:Math.PI/4}
-];
-const levels = [
- {size:4,target:'學校',icon:'🏫',people:'👦📖👧',weather:'🌤️ 晴朗城市',sky:0xbfeeff,ground:0x79d86f,route:[2,2,0,2,0],reveal:2,start:[0,3],theme:'school'},
- {size:5,target:'公園',icon:'🌳',people:'👦⚽👧',weather:'🌦️ 微雨公園',sky:0xaed8eb,ground:0x62c878,route:[1,2,1,2,0],reveal:2,start:[0,4],theme:'park'},
- {size:6,target:'圖書館',icon:'📚',people:'👧📚👦',weather:'🍂 秋日街道',sky:0xf3cf9b,ground:0x87c96b,route:[1,2,1,2,1,0],reveal:2,start:[0,5],theme:'library'},
- {size:7,target:'超級市場',icon:'🛒',people:'👦🛒👩',weather:'🌧️ 雨中城市',sky:0x8fb5c8,ground:0x5ebd70,route:[2,1,0,2,1,2,0],reveal:1,start:[0,6],theme:'market'},
- {size:7,target:'巴士站',icon:'🚌',people:'👧🚌👦',weather:'❄️ 飄雪小鎮',sky:0xdcecff,ground:0xd8eef1,route:[1,1,2,0,2,1,0],reveal:1,start:[0,6],theme:'bus'},
- {size:8,target:'屋企',icon:'🏠',people:'👨‍👩‍👧‍👦',weather:'🌲 森林黃昏',sky:0xf0a876,ground:0x4f9f63,route:[2,1,2,0,1,2,0,1],reveal:1,start:[0,7],theme:'home'},
- {size:8,target:'博物館',icon:'🏛️',people:'👦🖼️👧',weather:'🌙 星光夜城',sky:0x253957,ground:0x48765f,route:[1,2,1,0,2,1,2,0],reveal:0,start:[0,7],theme:'museum'},
- {size:8,target:'麵包店',icon:'🥐',people:'👩‍🍳🥖👦',weather:'🎉 節日街區',sky:0xd7b2f4,ground:0x6fca72,route:[2,1,2,1,0,2,1,0],reveal:0,start:[0,7],theme:'bakery'}
-];
-
-let renderer,scene,camera,boardGroup,player,weatherGroup,clock,northGuide;
-let levelIndex=0,score=0,selected=[],avatar='boy',travelling=false;
-let tileSize=2.25,level,orientation=0,boardRotation=0;
-let planningZoom=1,pinchStartDistance=0,pinchStartZoom=1;
-let orbitYaw=.72,orbitPitch=.72,draggingView=false,lastDragX=0,lastDragY=0;
-let travelLookYaw=0,travelLookPitch=0;
-const Y_AXIS=new THREE.Vector3(0,1,0);
-const $=id=>document.getElementById(id);
-
-function initThree(){
- renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
- renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);
- renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
- renderer.outputColorSpace=THREE.SRGBColorSpace;
- $('scene').appendChild(renderer.domElement);
- scene=new THREE.Scene();scene.background=new THREE.Color(0xbfeeff);scene.fog=new THREE.Fog(0xbfeeff,24,65);
- camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.08,150);
- clock=new THREE.Clock();
- const hemi=new THREE.HemisphereLight(0xffffff,0x496b52,2.2);scene.add(hemi);
- const sun=new THREE.DirectionalLight(0xffffff,2.5);sun.position.set(-14,22,10);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-25;sun.shadow.camera.right=25;sun.shadow.camera.top=25;sun.shadow.camera.bottom=-25;scene.add(sun);
- window.addEventListener('resize',onResize,{passive:true});
- renderer.setAnimationLoop(render);
- setupMapZoom();
-}
-function onResize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);if(!travelling)setPlanningCamera();}
-function clearScene(){
- if(boardGroup){scene.remove(boardGroup);boardGroup.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(m.map)m.map.dispose();m.dispose&&m.dispose()})}})}
- if(weatherGroup)scene.remove(weatherGroup);boardGroup=new THREE.Group();scene.add(boardGroup);northGuide=null;
-}
-function mat(color,rough=.8,metal=.05){return new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});}
-function box(w,h,d,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));m.castShadow=true;m.receiveShadow=true;return m;}
-function cyl(r1,r2,h,color,segments=16){const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,segments),mat(color));m.castShadow=true;m.receiveShadow=true;return m;}
-function worldPos(x,z,y=0){const half=(level.size-1)*tileSize/2;const v=new THREE.Vector3(x*tileSize-half,y,z*tileSize-half);v.applyAxisAngle(Y_AXIS,boardRotation);return v;}
-function addTree(x,z,scale=1){const g=new THREE.Group();const trunk=cyl(.18,.24,1.3,0x7d4b2b);trunk.position.y=.65;const crown=cyl(.85,1.15,2.2,0x2fa85c,12);crown.position.y=2.05;g.add(trunk,crown);g.position.copy(worldPos(x,z,0));g.scale.setScalar(scale);boardGroup.add(g);}
-function addLamp(x,z){const g=new THREE.Group();const p=cyl(.06,.08,2.1,0x425563);p.position.y=1.05;const light=box(.35,.3,.35,0xfff0ad);light.position.y=2.15;g.add(p,light);g.position.copy(worldPos(x,z,0));boardGroup.add(g);}
-function addBench(x,z){const g=new THREE.Group();const seat=box(1.1,.16,.38,0xa96c39);seat.position.y=.48;const back=box(1.1,.5,.12,0x9b5c2f);back.position.set(0,.79,.13);g.add(seat,back);g.position.copy(worldPos(x,z,0));boardGroup.add(g);}
-function addHouse(x,z,color=0xf5b16b){const g=new THREE.Group();const body=box(1.4,1.3,1.2,color);body.position.y=.65;const roof=new THREE.Mesh(new THREE.ConeGeometry(1.1,.8,4),mat(0xc94d4d));roof.position.y=1.7;roof.rotation.y=Math.PI/4;roof.castShadow=true;const door=box(.32,.68,.05,0x734426);door.position.set(0,.38,.625);g.add(body,roof,door);g.position.copy(worldPos(x,z,0));boardGroup.add(g);}
-function addCloud(x,y,z,s=1){const g=new THREE.Group();for(const [dx,dy,sc] of [[0,0,1],[-.8,-.1,.72],[.8,-.12,.78],[.2,.35,.7]]){const q=new THREE.Mesh(new THREE.SphereGeometry(.75*sc,12,10),mat(0xffffff));q.position.set(dx,dy,0);g.add(q)}g.position.set(x,y,z);g.scale.setScalar(s);scene.add(g);return g;}
-function addLandmark(x,z,theme){
- const g=new THREE.Group();
- if(theme==='school'){const b=box(2.0,1.55,1.6,0xffcf68);b.position.y=.78;const roof=box(2.2,.28,1.8,0xe85b4d);roof.position.y=1.69;const door=box(.45,.85,.06,0x37769b);door.position.set(0,.43,.83);const clockFace=cyl(.26,.26,.08,0xffffff,24);clockFace.rotation.x=Math.PI/2;clockFace.position.set(0,1.18,.86);g.add(b,roof,door,clockFace)}
- else if(theme==='park'){addTree(x,z,.9);const arch=new THREE.Group();const l=cyl(.08,.08,1.8,0x4b8b57);l.position.set(-.8,.9,0);const r=l.clone();r.position.x=.8;const top=box(1.75,.22,.22,0xf2b24f);top.position.y=1.75;arch.add(l,r,top);arch.position.copy(worldPos(x,z,0));boardGroup.add(arch);return;}
- else if(theme==='library'){const b=box(2.1,1.7,1.5,0x9a8bd9);b.position.y=.85;for(let i=-1;i<=1;i++){const c=cyl(.12,.12,1.3,0xffffff);c.position.set(i*.55,.65,.82);g.add(c)}const sign=box(1.5,.35,.08,0xffffff);sign.position.set(0,1.28,.82);g.add(b,sign)}
- else if(theme==='market'){const b=box(2.2,1.45,1.6,0x62b8d8);b.position.y=.72;const awn=box(2.3,.3,.42,0xff6d6d);awn.position.set(0,1.38,.86);g.add(b,awn)}
- else if(theme==='bus'){const post=cyl(.08,.08,2,0x245b89);post.position.y=1;const sign=cyl(.44,.44,.12,0x56aee3,24);sign.rotation.x=Math.PI/2;sign.position.set(0,1.7,.02);const roof=box(2.1,.16,1.0,0x6f8999);roof.position.y=1.8;g.add(post,sign,roof)}
- else if(theme==='home'){addHouse(x,z,0xffc778);return;}
- else if(theme==='museum'){const b=box(2.3,.6,1.5,0xe9e2d0);b.position.y=.3;for(let i=-1;i<=1;i++){const c=cyl(.13,.13,1.3,0xf7f3e8);c.position.set(i*.6,1.15,.6);g.add(c)}const roof=new THREE.Mesh(new THREE.ConeGeometry(1.7,.7,4),mat(0xc9b88d));roof.position.set(0,2,.05);roof.rotation.y=Math.PI/4;g.add(b,roof)}
- else {const b=box(2.0,1.4,1.5,0xf3a8b7);b.position.y=.7;const awn=box(2.15,.3,.42,0xffdf83);awn.position.set(0,1.32,.82);g.add(b,awn)}
- g.position.copy(worldPos(x,z,0));boardGroup.add(g);
-}
-function addPersonMesh(color=0x2f78b7){const g=new THREE.Group();const body=cyl(.28,.36,.9,color);body.position.y=.9;const head=new THREE.Mesh(new THREE.SphereGeometry(.25,16,12),mat(0xf2b486));head.position.y=1.55;const hair=new THREE.Mesh(new THREE.SphereGeometry(.265,16,8,0,Math.PI*2,0,Math.PI/2),mat(0x242d39));hair.position.y=1.61;g.add(body,head,hair);return g;}
-function makeTextSprite(text){
- const canvas=document.createElement('canvas');canvas.width=512;canvas.height=192;const ctx=canvas.getContext('2d');
- ctx.fillStyle='rgba(255,255,255,.96)';ctx.beginPath();ctx.roundRect(12,12,488,168,42);ctx.fill();
- ctx.lineWidth=14;ctx.strokeStyle='#ff3b30';ctx.stroke();ctx.fillStyle='#c9211e';ctx.font='900 92px "Noto Sans TC",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,256,98);
- const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
- const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false}));sprite.scale.set(2.5,.94,1);return sprite;
-}
-function createNorthGuide(){
- const start=worldPos(level.start[0],level.start[1],.25);const north=worldPos(level.start[0],level.start[1]-1,.25);
- const dir=north.clone().sub(start).setY(0).normalize();const origin=start.clone().add(dir.clone().multiplyScalar(.62));
- northGuide=new THREE.Group();northGuide.position.copy(origin);northGuide.userData.enabled=true;
- const arrow=new THREE.ArrowHelper(dir,new THREE.Vector3(0,0,0),1.6,0xff3028,.62,.4);arrow.line.material.linewidth=5;northGuide.add(arrow);
- const glow=new THREE.PointLight(0xff3b30,2.8,4.5);glow.position.set(0,.5,0);northGuide.add(glow);
- const label=makeTextSprite('北方');label.position.copy(dir).multiplyScalar(.8);label.position.y=1.35;northGuide.add(label);
- boardGroup.add(northGuide);player.rotation.y=Math.atan2(dir.x,dir.z);
-}
-function routeCells(l,directions=l.route){let x=l.start[0],z=l.start[1],a=[[x,z]];for(const idx of directions){x+=D[idx].dx;z+=D[idx].dz;a.push([x,z])}return a;}
-function getTargetCell(){const cells=routeCells(level);return cells[cells.length-1];}
-function getFullAnswer(){return [...level.route.slice(0,level.reveal),...selected];}
-function maxRouteSteps(){return Math.max(level.route.length+10,level.size*3);}
-function routeStatus(directions){
- const cells=routeCells(level,directions);let outOfBounds=false;
- for(const [x,z] of cells){if(x<0||z<0||x>=level.size||z>=level.size){outOfBounds=true;break;}}
- const end=cells[cells.length-1],target=getTargetCell();
- return {cells,end,target,outOfBounds,atTarget:!outOfBounds&&end[0]===target[0]&&end[1]===target[1]};
-}
-function buildLevel(){
- level=levels[levelIndex];selected=[];travelling=false;planningZoom=1;orbitYaw=.72;orbitPitch=.72;travelLookYaw=0;travelLookPitch=0;orientation=levelIndex%4;boardRotation=orientation*Math.PI/2;
- clearScene();scene.background=new THREE.Color(level.sky);scene.fog.color.setHex(level.sky);
- $('levelPill').textContent=`第 ${levelIndex+1} 關`;$('sizePill').textContent=`${level.size} × ${level.size}`;$('scorePill').textContent=`分數 ${score}`;$('targetName').textContent=level.target;$('weather').textContent=level.weather;
- $('needle').style.transform=`translate(-50%,-50%) rotate(${orientation*90}deg)`;
- const base=box(level.size*tileSize+1,.5,level.size*tileSize+1,level.ground);base.position.y=-.32;base.receiveShadow=true;boardGroup.add(base);
- for(let z=0;z<level.size;z++)for(let x=0;x<level.size;x++){const tile=box(tileSize*.88,.12,tileSize*.88,(x+z)%2?0xfff3b8:0xfff7cf);tile.position.copy(worldPos(x,z,.02));tile.receiveShadow=true;boardGroup.add(tile)}
- const pathCells=routeCells(level);const end=pathCells[pathCells.length-1];addLandmark(end[0],end[1],level.theme);
- const ring=new THREE.Mesh(new THREE.TorusGeometry(.55,.13,14,36),mat(0x35c987));ring.rotation.x=Math.PI/2;ring.position.copy(worldPos(level.start[0],level.start[1],.12));boardGroup.add(ring);
- player=addPersonMesh(avatar==='girl'?0xe56ba0:0x2f78b7);player.position.copy(worldPos(level.start[0],level.start[1],.1));player.scale.setScalar(.75);boardGroup.add(player);createNorthGuide();
- for(let i=0;i<level.size;i+=2){addTree(i-.25,-.8,.62);if(i%4===0)addLamp(i+.35,level.size-.15)}
- if(level.size>4){addBench(level.size-.35,Math.max(1,level.size-3));addHouse(-.75,1.1,0xf2a66d)}
- createWeather();setPlanningCamera();renderPlanner();
- $('planner').classList.remove('hidden');$('travelHud').classList.remove('show');$('viewBadge').classList.remove('show');$('zoomPanel').classList.remove('hidden');$('pinchTip').classList.remove('hidden');updateZoomLabel();
-}
-function clampZoom(v){return Math.max(.48,Math.min(2.35,v));}
-function updateZoomLabel(){if($('zoomPercent'))$('zoomPercent').textContent=`${Math.round(100/planningZoom)}%`;}
-function setPlanningCamera(){
- if(!level||travelling)return;
- const span=level.size*tileSize,radius=span*1.48*planningZoom,flat=Math.cos(orbitPitch)*radius;
- camera.position.set(Math.sin(orbitYaw)*flat,Math.sin(orbitPitch)*radius,Math.cos(orbitYaw)*flat);
- camera.lookAt(0,0,0);camera.fov=innerWidth<650?52:45;camera.updateProjectionMatrix();if(player)player.visible=true;updateZoomLabel();
-}
-function setMapZoom(value){if(!level||travelling)return;planningZoom=clampZoom(value);setPlanningCamera();}
-function adjustView(dx,dy){
- if(!level)return;
- if(travelling){travelLookYaw=Math.max(-1.3,Math.min(1.3,travelLookYaw-dx*.006));travelLookPitch=Math.max(-.72,Math.min(.72,travelLookPitch-dy*.005));return;}
- orbitYaw-=dx*.007;orbitPitch=Math.max(.25,Math.min(1.28,orbitPitch+dy*.006));setPlanningCamera();
-}
-function setupMapZoom(){
- const canvas=renderer.domElement;
- $('mapZoomIn').onclick=()=>setMapZoom(planningZoom*.82);$('mapZoomOut').onclick=()=>setMapZoom(planningZoom*1.22);$('mapZoomReset').onclick=()=>{planningZoom=1;orbitYaw=.72;orbitPitch=.72;setPlanningCamera()};
- canvas.addEventListener('wheel',e=>{if(!level||travelling)return;e.preventDefault();setMapZoom(planningZoom*Math.exp(e.deltaY*.0015))},{passive:false});
- canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||!level)return;draggingView=true;lastDragX=e.clientX;lastDragY=e.clientY;canvas.setPointerCapture?.(e.pointerId)});
- canvas.addEventListener('pointermove',e=>{if(!draggingView||e.pointerType==='touch')return;const dx=e.clientX-lastDragX,dy=e.clientY-lastDragY;lastDragX=e.clientX;lastDragY=e.clientY;adjustView(dx,dy)});
- canvas.addEventListener('pointerup',()=>{draggingView=false});canvas.addEventListener('pointercancel',()=>{draggingView=false});
- canvas.addEventListener('touchstart',e=>{if(!level)return;if(e.touches.length===2){const a=e.touches[0],b=e.touches[1];pinchStartDistance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);pinchStartZoom=planningZoom;draggingView=false}else if(e.touches.length===1){draggingView=true;lastDragX=e.touches[0].clientX;lastDragY=e.touches[0].clientY}},{passive:true});
- canvas.addEventListener('touchmove',e=>{if(!level)return;if(e.touches.length===2&&!travelling&&pinchStartDistance){e.preventDefault();const a=e.touches[0],b=e.touches[1],distance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);setMapZoom(pinchStartZoom*(pinchStartDistance/Math.max(20,distance)));return}if(e.touches.length===1&&draggingView){e.preventDefault();const t=e.touches[0],dx=t.clientX-lastDragX,dy=t.clientY-lastDragY;lastDragX=t.clientX;lastDragY=t.clientY;adjustView(dx,dy)}},{passive:false});
- canvas.addEventListener('touchend',e=>{pinchStartDistance=0;if(!e.touches.length)draggingView=false},{passive:true});canvas.addEventListener('touchcancel',()=>{pinchStartDistance=0;draggingView=false},{passive:true});
-}
-function createWeather(){weatherGroup=new THREE.Group();scene.add(weatherGroup);const count=levelIndex===3?260:levelIndex===4?190:levelIndex===6?120:45;const geom=new THREE.BufferGeometry();const arr=[];for(let i=0;i<count;i++)arr.push((Math.random()-.5)*35,Math.random()*18+2,(Math.random()-.5)*35);geom.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));const snow=levelIndex===4||levelIndex===6;const material=new THREE.PointsMaterial({color:snow?0xffffff:0xcbefff,size:snow?.16:.08,transparent:true,opacity:snow?.9:.55});const pts=new THREE.Points(geom,material);pts.userData.weather=snow?'snow':'rain';weatherGroup.add(pts);if(levelIndex<3||levelIndex===5){addCloud(-6,12,-8,1.5);addCloud(7,14,-12,1.1)}}
-function renderPlanner(){
- const slots=$('routeSlots');slots.innerHTML='';const full=getFullAnswer(),status=routeStatus(full);
- full.forEach((d,i)=>{if(i){const c=document.createElement('span');c.className='connector';c.textContent='›';slots.appendChild(c)}const b=document.createElement('button');const isFixed=i<level.reveal,isFinish=status.atTarget&&i===full.length-1;b.className='slot '+(isFixed?'fixed':isFinish?'finish':'answer');b.textContent=D[d].name;if(!isFixed)b.onclick=()=>removeFrom(i-level.reveal);slots.appendChild(b)});
- if(full.length<maxRouteSteps()&&!status.atTarget){if(full.length){const c=document.createElement('span');c.className='connector';c.textContent='›';slots.appendChild(c)}const empty=document.createElement('button');empty.className='slot empty';empty.textContent='＋ 選方向';empty.disabled=true;slots.appendChild(empty)}
- $('fillCount').textContent=status.atTarget?`✅ 已到達${level.target}`:`已選 ${full.length} 步，尚未到達終點`;
- $('confirmBtn').disabled=!status.atTarget||travelling;$('undoBtn').disabled=!selected.length;$('clearBtn').disabled=!selected.length;
- requestAnimationFrame(()=>{slots.scrollLeft=slots.scrollWidth});
-}
-function makeDirectionButtons(){const el=$('directionButtons');D.forEach((d,i)=>{const b=document.createElement('button');b.className='dirBtn';b.textContent=d.name;b.onclick=()=>choose(i);el.appendChild(b)});}
-function choose(i){
- if(travelling)return;const full=getFullAnswer();if(full.length>=maxRouteSteps()){showToast('路線太長，請先退一步');return;}
- const test=[...full,i],status=routeStatus(test);if(status.outOfBounds){showToast('呢一步會走出地圖，請選其他方向');return;}
- selected.push(i);renderPlanner();if(status.atTarget)showToast(`已到達${level.target}，可以出發！`);
-}
-function removeFrom(i){if(travelling)return;selected.splice(i,1);renderPlanner();}
-function clearAnswers(){selected=[];renderPlanner();}
-function confirmRoute(){
- if(travelling)return;const answer=getFullAnswer(),status=routeStatus(answer);
- if(!status.atTarget){showToast('路線最後仍未到達終點');return;}
- score+=100;$('scorePill').textContent=`分數 ${score}`;startTravel(answer);
-}
-function prepareTravel(){travelling=true;travelLookYaw=0;travelLookPitch=0;if(northGuide)northGuide.userData.enabled=false;$('planner').classList.add('hidden');$('zoomPanel').classList.add('hidden');$('pinchTip').classList.add('hidden');$('travelHud').classList.add('show');$('viewBadge').classList.add('show');$('viewBadge').textContent='👀 拖動畫面可自由觀看';player.visible=false;camera.fov=68;camera.updateProjectionMatrix();$('progressFill').style.width='0';}
-async function startTravel(answer){
- prepareTravel();const cells=routeCells(level,answer);
- for(let i=0;i<answer.length;i++){const from=worldPos(cells[i][0],cells[i][1],1.25),to=worldPos(cells[i+1][0],cells[i+1][1],1.25);$('travelText').textContent=`向${D[answer[i]].name}前進`;$('travelStep').textContent=`${i+1} / ${answer.length}`;$('progressFill').style.width=`${(i/answer.length)*100}%`;await walkSegment(from,to)}
- $('progressFill').style.width='100%';await wait(400);showResult(answer.length);
-}
-function walkSegment(from,to){return new Promise(resolve=>{const duration=1150,begin=performance.now(),forward=to.clone().sub(from).normalize();function frame(now){const p=Math.min(1,(now-begin)/duration),smooth=p*p*(3-2*p);camera.position.lerpVectors(from,to,smooth);camera.position.y+=Math.sin(p*Math.PI*6)*.045;const dir=forward.clone().applyAxisAngle(Y_AXIS,travelLookYaw);dir.y+=Math.sin(travelLookPitch);dir.normalize();camera.lookAt(camera.position.clone().add(dir.multiplyScalar(4)));if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)});}
-function showResult(stepCount){travelling=false;$('travelHud').classList.remove('show');$('viewBadge').classList.remove('show');$('resultIcon').textContent=level.icon;$('arrivalBuilding').textContent=level.icon;$('arrivalPeople').textContent=level.people;$('resultTitle').textContent=`成功到達${level.target}！`;$('resultText').textContent=`你用自己設計的 ${stepCount} 步路線成功到達終點。其他可行路線同樣會答啱。`;$('nextBtn').textContent=levelIndex===levels.length-1?'重新挑戰':'下一關';$('result').classList.add('open');}
-function nextLevel(){$('result').classList.remove('open');levelIndex++;if(levelIndex>=levels.length){levelIndex=0;score=0}buildLevel();}
-function showToast(t){$('toast').textContent=t;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1500);}
-function wait(ms){return new Promise(r=>setTimeout(r,ms));}
-function render(){
- const dt=Math.min(clock.getDelta(),.04);
- if(northGuide){const blink=Math.floor(performance.now()/430)%2===0;northGuide.visible=!!northGuide.userData.enabled&&blink;}
- if(weatherGroup){weatherGroup.children.forEach(p=>{if(!p.geometry?.attributes?.position)return;const a=p.geometry.attributes.position;for(let i=0;i<a.count;i++){let y=a.getY(i)-(p.userData.weather==='snow'?dt*.8:dt*6);if(y<0)y=18;a.setY(i,y)}a.needsUpdate=true});if(levelIndex===6)weatherGroup.rotation.y+=dt*.03}
- renderer.render(scene,camera);
-}
-
-makeDirectionButtons();initThree();
-$('undoBtn').onclick=()=>{selected.pop();renderPlanner()};$('clearBtn').onclick=clearAnswers;$('confirmBtn').onclick=confirmRoute;$('nextBtn').onclick=nextLevel;
-document.querySelectorAll('.avatar').forEach(b=>b.onclick=()=>{document.querySelectorAll('.avatar').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');avatar=b.dataset.avatar});
-$('startBtn').onclick=()=>{$('intro').classList.remove('open');buildLevel()};
-})();
-</script>
+<script src="game.js"></script>
 </body>
 </html>
