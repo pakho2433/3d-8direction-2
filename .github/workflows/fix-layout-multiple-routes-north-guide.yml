@@ -1,0 +1,235 @@
+name: Fix layout, add north guide and accept multiple routes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fix-layout-multiple-routes-north-guide.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch the game
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("index.html")
+          s = path.read_text(encoding="utf-8")
+
+          def replace_once(old, new, label):
+              global s
+              if old not in s:
+                  raise SystemExit(f"Missing anchor: {label}")
+              s = s.replace(old, new, 1)
+
+          # Prevent Safari page zoom and keep map gestures on the WebGL canvas only.
+          replace_once(
+              '#scene canvas{display:block;width:100%;height:100%}',
+              '#scene canvas{display:block;width:100%;height:100%;touch-action:none;overscroll-behavior:none}',
+              'canvas css'
+          )
+          replace_once(
+              'button{font:inherit;color:inherit}',
+              'button{font:inherit;color:inherit;touch-action:manipulation;-webkit-user-select:none;user-select:none}\n#hud,#compassDock,#planner,#zoomPanel,#weather,#pinchTip{-webkit-user-select:none;user-select:none}',
+              'button css'
+          )
+          replace_once(
+              '  #weather{top:145px;font-size:13px;right:11px}#viewBadge{top:150px}\n  #zoomPanel{right:9px;top:205px;padding:7px}.zoomMapBtn{width:43px;height:43px;font-size:24px}#pinchTip{top:160px;font-size:12px}',
+              '  #weather{top:190px;font-size:12px;right:8px}#viewBadge{top:155px}\n  #zoomPanel{right:9px;top:246px;padding:7px}.zoomMapBtn{width:43px;height:43px;font-size:24px}#pinchTip{top:205px;font-size:12px}',
+              'mobile positions'
+          )
+
+          replace_once(
+              '<div id="subMission">先完成整條方向路線，角色才會出發。</div>',
+              '<div id="subMission">答案可以有多種，只要最後成功到達終點便算正確。</div>',
+              'mission text'
+          )
+          replace_once(
+              '<p>先一次過填好完整方向路線。你可以拖動畫面自由調校視角；答案錯誤時，角色會先用第一身視角走到出錯位置，再讓你重新作答。</p>',
+              '<p>先一次過填好完整方向路線。答案不只一個，只要最後到達終點便算正確；錯誤時會先播放你實際選擇的路線。</p>',
+              'intro text'
+          )
+          replace_once(
+              '<div id="wrongResult" class="modal"><div class="card"><span class="bigIcon">🧭❌</span><h2 id="wrongTitle">路線在第 1 步走錯</h2><p id="wrongRouteText">你選擇了東方，正確應該是北方。</p><div id="wrongRouteList"></div><p>你已經用第一身視角看過走錯的位置，現在可以重新作答。</p><button id="retryWrongBtn" class="modalButton">重新作答</button></div></div>',
+              '<div id="wrongResult" class="modal"><div class="card"><span class="bigIcon">🧭❌</span><h2 id="wrongTitle">今次未能到達終點</h2><p id="wrongRouteText">你已觀看自己選擇的完整路線。</p><div id="wrongRouteList"></div><p>答案可以有多種，只要最後到達終點便算正確。現在可以重新作答。</p><button id="retryWrongBtn" class="modalButton">重新作答</button></div></div>',
+              'wrong modal'
+          )
+
+          replace_once(
+              'let renderer,scene,camera,boardGroup,player,weatherGroup,clock;',
+              'let renderer,scene,camera,boardGroup,player,weatherGroup,clock,northGuide=null,targetCell=null,lastAnswer=[];',
+              'state variables'
+          )
+          replace_once(
+              'let orbitYaw=.72,orbitPitch=.72,draggingView=false,lastDragX=0,lastDragY=0;',
+              'let orbitYaw=.72,orbitPitch=.84,draggingView=false,lastDragX=0,lastDragY=0;',
+              'orbit defaults'
+          )
+
+          person_anchor = "function addPersonMesh(color=0x2f78b7){const g=new THREE.Group();const body=cyl(.28,.36,.9,color);body.position.y=.9;const head=new THREE.Mesh(new THREE.SphereGeometry(.25,16,12),mat(0xf2b486));head.position.y=1.55;const hair=new THREE.Mesh(new THREE.SphereGeometry(.265,16,8,0,Math.PI*2,0,Math.PI/2),mat(0x242d39));hair.position.y=1.61;g.add(body,head,hair);return g}"
+          guide_code = person_anchor + r'''
+function makeGuideLabel(text){
+ const c=document.createElement('canvas');c.width=512;c.height=192;const x=c.getContext('2d');
+ x.fillStyle='rgba(255,255,255,.96)';x.strokeStyle='#ef4d43';x.lineWidth=14;
+ x.beginPath();x.moveTo(54,18);x.lineTo(458,18);x.quadraticCurveTo(494,18,494,54);x.lineTo(494,138);x.quadraticCurveTo(494,174,458,174);x.lineTo(54,174);x.quadraticCurveTo(18,174,18,138);x.lineTo(18,54);x.quadraticCurveTo(18,18,54,18);x.closePath();x.fill();x.stroke();
+ x.fillStyle='#c92d35';x.font='900 78px -apple-system, BlinkMacSystemFont, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(text,256,98);
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sprite.scale.set(2.1,.79,1);return sprite
+}
+function addNorthGuide(){
+ const g=new THREE.Group(),dir=new THREE.Vector3(0,0,-1).applyAxisAngle(Y_AXIS,boardRotation).normalize();
+ const arrow=new THREE.ArrowHelper(dir,new THREE.Vector3(0,1.08,0),1.65,0xff3d45,.52,.34);arrow.line.material.depthTest=false;arrow.cone.material.depthTest=false;
+ const label=makeGuideLabel('北方');label.position.copy(dir.clone().multiplyScalar(1.15));label.position.y=2.05;
+ const light=new THREE.PointLight(0xff4c55,2.2,4.8);light.position.copy(dir.clone().multiplyScalar(.9));light.position.y=1.5;
+ g.add(arrow,label,light);g.position.copy(worldPos(level.start[0],level.start[1],0));g.userData.enabled=true;g.userData.light=light;boardGroup.add(g);return g
+}'''
+          replace_once(person_anchor, guide_code, 'north guide functions')
+
+          replace_once(
+              'level=levels[levelIndex];selected=[];travelling=false;planningZoom=1;orbitYaw=.72;orbitPitch=.72;travelLookYaw=0;travelLookPitch=0;wrongRouteGroup=null;orientation=levelIndex%4;boardRotation=orientation*Math.PI/2;',
+              'level=levels[levelIndex];selected=[];travelling=false;planningZoom=1;orbitYaw=.72;orbitPitch=.84;travelLookYaw=0;travelLookPitch=0;wrongRouteGroup=null;northGuide=null;lastAnswer=[];orientation=levelIndex%4;boardRotation=orientation*Math.PI/2;',
+              'level reset'
+          )
+          replace_once(
+              'const end=pathCells[pathCells.length-1];addLandmark(end[0],end[1],level.theme);',
+              'const end=pathCells[pathCells.length-1];targetCell=[end[0],end[1]];addLandmark(end[0],end[1],level.theme);',
+              'target cell'
+          )
+          replace_once(
+              "player=addPersonMesh(avatar==='girl'?0xe56ba0:0x2f78b7);player.position.copy(worldPos(level.start[0],level.start[1],.1));player.scale.setScalar(.75);boardGroup.add(player);",
+              "player=addPersonMesh(avatar==='girl'?0xe56ba0:0x2f78b7);player.position.copy(worldPos(level.start[0],level.start[1],.1));player.scale.setScalar(.75);boardGroup.add(player);northGuide=addNorthGuide();",
+              'player guide'
+          )
+          replace_once(
+              "createWeather();setPlanningCamera();renderPlanner();",
+              "createWeather();setPlanningCamera();requestAnimationFrame(setPlanningCamera);setTimeout(setPlanningCamera,120);renderPlanner();",
+              'camera recenter'
+          )
+
+          camera_pattern = re.compile(r"function setPlanningCamera\(\)\{[\s\S]*?\n\}")
+          camera_replacement = '''function setPlanningCamera(){
+ if(!level||travelling)return;
+ const span=level.size*tileSize,radius=span*(innerWidth<650?2.05:1.62)*planningZoom,flat=Math.cos(orbitPitch)*radius;
+ camera.position.set(Math.sin(orbitYaw)*flat,Math.sin(orbitPitch)*radius,Math.cos(orbitYaw)*flat);
+ camera.lookAt(0,.45,0);camera.fov=innerWidth<650?50:44;camera.updateProjectionMatrix();if(player)player.visible=true;updateZoomLabel()
+}'''
+          s, n = camera_pattern.subn(camera_replacement, s, count=1)
+          if n != 1: raise SystemExit('Could not replace planning camera')
+          replace_once(
+              "$('mapZoomReset').onclick=()=>{planningZoom=1;orbitYaw=.72;orbitPitch=.72;setPlanningCamera()};",
+              "$('mapZoomReset').onclick=()=>{planningZoom=1;orbitYaw=.72;orbitPitch=.84;setPlanningCamera()};",
+              'reset camera'
+          )
+
+          confirm_pattern = re.compile(r"function confirmRoute\(\)\{[\s\S]*?\n\}\nfunction prepareTravel")
+          confirm_replacement = '''function confirmRoute(){
+ if(travelling)return;
+ const answer=[...level.route.slice(0,level.reveal),...selected],cells=directionsToCells(answer);
+ let outsideStep=-1;
+ for(let i=1;i<cells.length;i++){const [x,z]=cells[i];if(x<0||z<0||x>=level.size||z>=level.size){outsideStep=i-1;break}}
+ const end=cells[cells.length-1],reached=outsideStep<0&&end[0]===targetCell[0]&&end[1]===targetCell[1];
+ lastAnswer=answer.slice();
+ if(reached){score+=100;$('scorePill').textContent=`分數 ${score}`;startTravel(answer);return}
+ startWrongTravel(answer,{type:outsideStep>=0?'outside':'miss',index:outsideStep>=0?outsideStep:answer.length-1,end})
+}
+function prepareTravel'''
+          s, n = confirm_pattern.subn(confirm_replacement, s, count=1)
+          if n != 1: raise SystemExit('Could not replace confirmRoute')
+
+          replace_once(
+              "travelling=true;travelLookYaw=0;travelLookPitch=0;$('planner').classList.add('hidden');",
+              "travelling=true;travelLookYaw=0;travelLookPitch=0;if(northGuide){northGuide.userData.enabled=false;northGuide.visible=false}$('planner').classList.add('hidden');",
+              'hide north guide'
+          )
+
+          travel_pattern = re.compile(r"async function startTravel\(\)\{[\s\S]*?\n\}")
+          travel_replacement = '''async function startTravel(answer){
+ prepareTravel();const cells=directionsToCells(answer);
+ for(let i=0;i<answer.length;i++){const from=worldPos(cells[i][0],cells[i][1],1.25),to=worldPos(cells[i+1][0],cells[i+1][1],1.25);$('travelText').textContent=`向${D[answer[i]].name}前進`;$('travelStep').textContent=`${i+1} / ${answer.length}`;$('progressFill').style.width=`${(i/answer.length)*100}%`;await walkSegment(from,to,i)}
+ $('progressFill').style.width='100%';await wait(400);showResult(answer.length)
+}'''
+          s, n = travel_pattern.subn(travel_replacement, s, count=1)
+          if n != 1: raise SystemExit('Could not replace startTravel')
+
+          wrong_pattern = re.compile(r"async function startWrongTravel\(answer,wrongIndex\)\{[\s\S]*?\n\}\nfunction wrongPause")
+          wrong_replacement = '''async function startWrongTravel(answer,reason){
+ prepareTravel();const cells=directionsToCells(answer),steps=reason.type==='outside'?reason.index+1:answer.length;
+ $('progressFill').style.background='linear-gradient(90deg,#55c887,#ef5965)';
+ for(let i=0;i<steps;i++){
+  const from=worldPos(cells[i][0],cells[i][1],1.25),to=worldPos(cells[i+1][0],cells[i+1][1],1.25),bad=i===steps-1;
+  addRouteStrip(from,to,bad?0xef334d:0x41c878);$('travelText').textContent=bad?(reason.type==='outside'?`第 ${i+1} 步走出棋盤`:`路線結束，但未到達${level.target}`):`第 ${i+1} 步：向${D[answer[i]].name}前進`;$('travelStep').textContent=`${i+1} / ${answer.length}`;$('progressFill').style.width=`${((i+1)/answer.length)*100}%`;await walkSegment(from,to,i,bad)
+ }
+ const stop=Math.max(1,steps),wrongPos=worldPos(cells[stop][0],cells[stop][1],.1);addWrongMarker(wrongPos);$('viewBadge').textContent=reason.type==='outside'?'❌ 走出了棋盤':'❌ 未到達終點';await wrongPause(wrongPos);showWrongResult(answer,reason)
+}
+function wrongPause'''
+          s, n = wrong_pattern.subn(wrong_replacement, s, count=1)
+          if n != 1: raise SystemExit('Could not replace wrong travel')
+
+          show_wrong_pattern = re.compile(r"function showWrongResult\(answer,wrongIndex\)\{[\s\S]*?\n\}")
+          show_wrong_replacement = '''function showWrongResult(answer,reason){
+ travelling=false;$('travelHud').classList.remove('show');$('viewBadge').classList.remove('show');
+ $('wrongTitle').textContent=reason.type==='outside'?`第 ${reason.index+1} 步走出了棋盤`:`路線未能到達${level.target}`;
+ $('wrongRouteText').textContent=reason.type==='outside'?`你的第 ${reason.index+1} 步離開了棋盤範圍。`:`你完成了整條路線，但最後停下的位置不是${level.target}。`;
+ const list=$('wrongRouteList');list.innerHTML='';answer.forEach((idx,i)=>{const chip=document.createElement('span');chip.className='wrongChip '+(i===reason.index?'bad':'good');chip.textContent=`${i+1}. ${D[idx].name}`;list.appendChild(chip)});$('wrongResult').classList.add('open')
+}'''
+          s, n = show_wrong_pattern.subn(show_wrong_replacement, s, count=1)
+          if n != 1: raise SystemExit('Could not replace wrong result')
+
+          replace_once(
+              "$('wrongResult').classList.remove('open');selected=[];travelling=false;if(wrongRouteGroup){boardGroup.remove(wrongRouteGroup);wrongRouteGroup=null}player.visible=true;player.position.copy(worldPos(level.start[0],level.start[1],.1));",
+              "$('wrongResult').classList.remove('open');selected=[];travelling=false;if(wrongRouteGroup){boardGroup.remove(wrongRouteGroup);wrongRouteGroup=null}player.visible=true;player.position.copy(worldPos(level.start[0],level.start[1],.1));if(northGuide){northGuide.userData.enabled=true;northGuide.visible=true}",
+              'retry guide'
+          )
+          replace_once(
+              "function showResult(){travelling=false;$('travelHud').classList.remove('show');$('viewBadge').classList.remove('show');$('resultIcon').textContent=level.icon;$('arrivalBuilding').textContent=level.icon;$('arrivalPeople').textContent=level.people;$('resultTitle').textContent=`成功到達${level.target}！`;$('resultText').textContent=`你先完成 ${level.route.length} 格方向答案，再以第一身視角走完整條路線。`;$('nextBtn').textContent=levelIndex===levels.length-1?'重新挑戰':'下一關';$('result').classList.add('open')}",
+              "function showResult(routeCount){travelling=false;$('travelHud').classList.remove('show');$('viewBadge').classList.remove('show');$('resultIcon').textContent=level.icon;$('arrivalBuilding').textContent=level.icon;$('arrivalPeople').textContent=level.people;$('resultTitle').textContent=`成功到達${level.target}！`;$('resultText').textContent=`你的 ${routeCount} 步路線成功到達終點。答案不只一個，這條路線同樣正確！`;$('nextBtn').textContent=levelIndex===levels.length-1?'重新挑戰':'下一關';$('result').classList.add('open')}",
+              'success message'
+          )
+
+          render_anchor = "function render(){const dt=Math.min(clock.getDelta(),.04);if(wrongRouteGroup){"
+          render_new = "function render(){const dt=Math.min(clock.getDelta(),.04);if(northGuide&&northGuide.userData.enabled){const on=Math.floor(performance.now()/430)%2===0;northGuide.visible=on;if(northGuide.userData.light)northGuide.userData.light.intensity=on?2.4:.15}if(wrongRouteGroup){"
+          replace_once(render_anchor, render_new, 'render north blink')
+
+          replace_once(
+              "makeDirectionButtons();initThree();",
+              "document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});document.addEventListener('gesturechange',e=>e.preventDefault(),{passive:false});document.addEventListener('gestureend',e=>e.preventDefault(),{passive:false});document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});\nmakeDirectionButtons();initThree();",
+              'Safari zoom prevention'
+          )
+
+          path.write_text(s, encoding="utf-8")
+          print("Patched index.html")
+          PY
+
+      - name: Basic JavaScript syntax check
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?: [^>]*)?>([\s\S]*?)</script>',s)
+          Path('/tmp/game.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/game.js
+
+      - name: Commit the update
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No changes required"
+          else
+            git commit -m "Fix mobile layout, add blinking north guide and allow multiple valid routes [skip ci]"
+            git push
+          fi
