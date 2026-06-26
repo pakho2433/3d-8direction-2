@@ -1,0 +1,1 @@
+export default {id:'holySword',name:'Holy Sword',role:'高傷害聖騎士',unlocked:false,unlockChapter:5,base:{hp:560,mp:125,attack:72,defense:31,critRate:.12,critDamage:1.75,attackSpeed:1.02,moveSpeed:92,attackRange:92},palette:{hair:0xffd56c,skin:0xe9bd97,armor:0x6c73df,accent:0xf0f3ff,weapon:0xffec93}};
