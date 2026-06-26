@@ -1,0 +1,12 @@
+{
+  "name":"PixelIdleRPG",
+  "short_name":"Pixel RPG",
+  "description":"Original 2D Pixel Art idle RPG with automatic battles and local saves.",
+  "start_url":"./index.html",
+  "scope":"./",
+  "display":"standalone",
+  "orientation":"landscape",
+  "background_color":"#080d16",
+  "theme_color":"#080d16",
+  "icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
