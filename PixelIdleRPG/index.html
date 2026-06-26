@@ -1,1 +1,36 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>PixelIdleRPG</title><link rel="stylesheet" href="./assets/style.css"></head><body><div id="app-shell"><header id="topbar-root"></header><div id="main-layout"><aside id="sidemenu-root"></aside><main id="game-column"><div id="game-container"></div><section id="battlehud-root"></section></main><aside id="rightpanel-root"></aside></div><nav id="bottommenu-root"></nav></div><div id="page-overlay-root"></div><div id="modal-root"></div><div id="toast-root"></div></body></html>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#080d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PixelIdleRPG">
+  <title>PixelIdleRPG</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./assets/base.css">
+  <link rel="stylesheet" href="./assets/chrome.css">
+  <link rel="stylesheet" href="./assets/battle-ui.css">
+  <link rel="stylesheet" href="./assets/synth.css">
+  <link rel="stylesheet" href="./assets/pages.css">
+  <link rel="stylesheet" href="./assets/overlay-responsive.css">
+</head>
+<body>
+  <div id="rotate-hint"><div class="rotate-card pixel-frame"><div class="rotate-icon">↻</div><strong>請將 iPhone 轉為橫向</strong><span>橫向模式可以完整顯示戰鬥及裝備介面。</span></div></div>
+  <div id="app-shell">
+    <header id="topbar-root"></header>
+    <div id="main-layout">
+      <aside id="sidemenu-root"></aside>
+      <main id="game-column"><div id="game-container"></div><section id="battlehud-root"></section></main>
+      <aside id="rightpanel-root"></aside>
+    </div>
+    <nav id="bottommenu-root"></nav>
+  </div>
+  <div id="page-overlay-root"></div><div id="modal-root"></div><div id="toast-root"></div>
+  <noscript>此遊戲需要啟用 JavaScript。</noscript>
+  <script type="module" src="./src/main.js"></script>
+  <script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));}</script>
+</body>
+</html>
