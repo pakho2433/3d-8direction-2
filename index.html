@@ -4,17 +4,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#bfeeff">
-<title>3D 八方向任務 2｜自由路線</title>
-<link rel="stylesheet" href="style.css?v=3">
+<title>3D 八方向任務 2｜多景點任務</title>
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <div id="app"><div id="scene"></div></div>
 <section id="hud" class="glass">
-  <div id="stats"><span class="pill" id="levelPill">第 1 關</span><span class="pill" id="sizePill">4 × 4</span><span class="pill" id="scorePill">分數 0</span></div>
-  <div id="mission">由起點前往 <b id="targetName">學校</b></div>
-  <div id="subMission">任何路線都可以先出發測試；最後到達終點才算成功。</div>
+  <div id="stats">
+    <span class="pill" id="levelPill">第 1 關</span>
+    <span class="pill" id="sizePill">4 × 4</span>
+    <span class="pill" id="taskPill">任務 1 / 1</span>
+    <span class="pill" id="scorePill">分數 0</span>
+  </div>
+  <div id="mission">第 1 站：前往 <b id="targetName">學校</b></div>
+  <div id="subMission">完成目前景點後，會解鎖下一個景點。</div>
 </section>
-<div id="compassDock"><div id="compass"><div id="needle"></div><div id="hub"></div><div id="nMark">N</div></div><div id="compassLabel">指南針</div></div>
+<div id="compassDock">
+  <div id="compass">
+    <div id="needleWrap">
+      <div id="needle"></div>
+      <div id="nMark">N</div>
+    </div>
+    <div id="hub"></div>
+  </div>
+  <div id="compassLabel">指南針</div>
+</div>
 <div id="weather">🌤️ 晴朗城市</div>
 <div id="pinchTip" class="hidden">☝️ 單指拖動畫面調校視角　🤏 雙指縮放</div>
 <div id="zoomPanel" class="glass hidden" aria-label="地圖縮放控制">
@@ -30,17 +44,23 @@
   <button class="viewModeBtn" data-view="side">🎥 側面</button>
 </div>
 <section id="planner" class="glass">
-  <div id="plannerTitle"><span>🧠 自由規劃前往終點</span><small id="fillCount">請選擇方向</small></div>
+  <div id="plannerTitle"><span>🧠 規劃前往目前景點</span><small id="fillCount">請選擇方向</small></div>
   <div id="routeSlots"></div>
   <div id="directionButtons"></div>
-  <div id="actions"><button class="actionBtn" id="undoBtn">退一步</button><button class="actionBtn" id="clearBtn">清除答案</button><button class="actionBtn primary" id="confirmBtn" disabled>沿此路線出發</button></div>
+  <div id="actions">
+    <button class="actionBtn" id="undoBtn">退一步</button>
+    <button class="actionBtn" id="clearBtn">清除答案</button>
+    <button class="actionBtn primary" id="confirmBtn" disabled>沿此路線出發</button>
+  </div>
 </section>
-<section id="travelHud" class="glass"><div id="travelLine"><span id="travelText">第一身行走中</span><span id="travelStep">0 / 0</span></div><div class="progressTrack"><div class="progressFill" id="progressFill"></div></div></section>
+<section id="travelHud" class="glass">
+  <div id="travelLine"><span id="travelText">第一身行走中</span><span id="travelStep">0 / 0</span></div>
+  <div class="progressTrack"><div class="progressFill" id="progressFill"></div></div>
+</section>
 <div id="toast"></div>
-<div id="intro" class="modal open"><div class="card"><span class="bigIcon">🧭</span><h1>3D 八方向任務 2</h1><p>角色前方會有閃亮的「北方」箭嘴。任何路線都可以出發測試，行走期間亦可隨時切換第一身、第三身或側面視角；最後到達目的地才算成功。</p><div class="avatarPick"><button class="avatar selected" data-avatar="boy"><span>👦</span>男同學</button><button class="avatar" data-avatar="girl"><span>👧</span>女同學</button></div><button id="startBtn" class="modalButton">開始任務</button></div></div>
-<div id="result" class="modal"><div class="card"><span class="bigIcon" id="resultIcon">🏫</span><h2 id="resultTitle">成功到達學校！</h2><div id="arrivalScene"><div class="arrivalRoad"></div><div class="arrivalBuilding" id="arrivalBuilding">🏫</div><div class="arrivalPeople" id="arrivalPeople">👦👧</div></div><p id="resultText">你成功用自己的路線到達終點。</p><button id="nextBtn" class="modalButton">下一關</button></div></div>
+<div id="intro" class="modal open"><div class="card"><span class="bigIcon">🧭</span><h1>3D 八方向任務 2</h1><p>指南針的 N 會跟著紅針指向真正北方。地圖最大為 7×7；關卡愈高，同一關要依次完成的景點愈多。行走期間可以隨時切換第一身、第三身或側面視角。</p><div class="avatarPick"><button class="avatar selected" data-avatar="boy"><span>👦</span>男同學</button><button class="avatar" data-avatar="girl"><span>👧</span>女同學</button></div><button id="startBtn" class="modalButton">開始任務</button></div></div>
+<div id="result" class="modal"><div class="card"><span class="bigIcon" id="resultIcon">🏫</span><h2 id="resultTitle">成功到達學校！</h2><div id="arrivalScene"><div class="arrivalRoad"></div><div class="arrivalBuilding" id="arrivalBuilding">🏫</div><div class="arrivalPeople" id="arrivalPeople">👦👧</div></div><p id="resultText">你成功到達目前景點。</p><button id="nextBtn" class="modalButton">前往下一站</button></div></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="third-view.js?v=3"></script>
-<script src="game.js?v=3"></script>
+<script src="game.js?v=4"></script>
 </body>
 </html>
