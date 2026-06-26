@@ -1,0 +1,5 @@
+export class RewardSystem {
+  constructor(saveSystem,equipmentSystem,heroSystem){this.save=saveSystem;this.equipment=equipmentSystem;this.heroes=heroSystem;}
+  rollRarity(chapter,boss=false){const bonus=Math.min(.18,(chapter-1)*.012)+(boss?.16:0);const r=Math.random();if(r<.002+bonus*.04)return'mythic';if(r<.015+bonus*.12)return'legendary';if(r<.07+bonus*.28)return'epic';if(r<.22+bonus*.45)return'rare';if(r<.55+bonus)return'uncommon';return'common';}
+  grantBattle({chapter,stage,boss,coins,exp,dropRate=.35}){const gold=Math.max(1,Math.round(coins*(1+chapter*.08)));const xp=Math.max(1,Math.round(exp*(1+chapter*.06)));const drops=[];if(Math.random()<dropRate||boss)drops.push(this.equipment.createDrop({rarity:this.rollRarity(chapter,boss),level:(chapter-1)*10+stage}));this.save.mutate(state=>{state.player.gold+=gold;state.stats.wins++;state.stats.totalGold+=gold;if(boss)state.stats.bosses++;state.inventory.push(...drops);});const levelUps=this.heroes.gainTeamExp(xp);return{gold,xp,drops,levelUps};}
+}
