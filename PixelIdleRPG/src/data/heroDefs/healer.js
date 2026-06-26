@@ -1,0 +1,1 @@
+export default {id:'healer',name:'Healer',role:'治療及輔助',unlocked:true,unlockChapter:1,base:{hp:490,mp:150,attack:36,defense:24,critRate:.06,critDamage:1.5,attackSpeed:.9,moveSpeed:88,attackRange:330},palette:{hair:0xf4d16e,skin:0xf0c3a1,armor:0xd4eed8,accent:0x63ca76,weapon:0x79d78a}};
